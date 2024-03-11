@@ -1,0 +1,90 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+'Coded by: WAW
+'Date: 03/25/2015
+'This is a custom GAB script that will check to see if the user has checked the 'Complete Receipt as Ordered'
+'checkbox on the 'Receive Purchase Order Items' screen. If so, the program will take the number that has been
+'input in the 'Packing List' field and insert it into the PO_Receiver table under the PACK_LIST column for each
+'line of the purchase order/receiver number the user is currently looking at. If not checked program runs as normal
+
+V.Local.ssql.Declare(String)
+V.Local.sError.Declare(String)
+V.Local.sPO.Declare(String)
+V.Local.sPL.Declare(String)
+V.Local.sRecNum1.Declare(String)
+V.Local.sRecNum2.Declare(String)
+V.Local.sRecNum.Declare(String)
+
+'open the connection to the database
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+V.Local.sPO.Set(V.Passed.000002.Trim)
+F.Intrinsic.String.LPad(V.Local.sPO,"0",7,V.Local.sPO)
+
+'set the packing list field
+V.Local.sPL.Set(V.Passed.000136.Trim)
+
+F.Intrinsic.string.concat(V.Local.sRecNum1,V.Local.sRecNum2,V.Local.sRecNum)
+
+'when the user clicks the 'Ok' button if the 'Complete Receipt As Ordered' checkbox is checked
+'take the number in the 'Packing List' field and insert it into the recordset
+F.Intrinsic.Control.If(V.passed.000011,=,"Y")
+
+'update pack list in the PO_RECEIVER table for each line of the order based on what the user entered in the packing list field
+F.Intrinsic.String.Build("update PO_RECEIVER set PACK_LIST='{0}' where PURCHASE_ORDER = '{1}'",V.Local.sPL,V.Local.sPO,V.Local.ssql)
+'
+'F.ODBC.Connection!con.OpenRecordsetRO("rst",V.local.ssql)
+F.ODBC.Connection!con.OpenRecordsetRW("rst",V.local.ssql)
+
+F.Intrinsic.Control.EndIf
+F.ODBC.con!rst.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3996_ReceiptCheck.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+F.Intrinsic.Control.SetErrorHandler("Unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+'close the connection to the database
+F.ODBC.Connection!con.Close
+
+'end the program
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3996_ReceiptCheck.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Unload.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_Fabcon_ReceiptCheck$}$WAW$}$3/25/2015
+Program.Sub.Comments.End
+
